@@ -94,6 +94,20 @@ const file = { uri: { scheme: 'file' } };
   assert.deepStrictEqual(store[KEY].collection.map(d => [d.currentName, d.xp]), [['Imperialdramon Paladin', 2400]], 'chained fusion');
   assert.strictEqual(provider.state.fuse(store[KEY].collection[0].id, 999, 'Omnimon'), false, 'no partner, no fusion');
 
+  // evolution tree: targets exist, no dead ends before Mega, everything reachable from an egg
+  {
+    const { DIGIMON: DG } = require('../src/data/digimon');
+    const { EVOLUTIONS: EV, FRESH_EGGS: FE, JOGRESS: JG, DIVINE: DV } = require('../src/data/evolutions');
+    const seen = new Set(FE), queue = [...FE];
+    while (queue.length) { (EV[queue.shift()] || { evolvesTo: [] }).evolvesTo.forEach(t => { if (!seen.has(t)) { seen.add(t); queue.push(t); } }); }
+    Object.keys(DG).forEach(n => {
+      assert(EV[n] && fs.existsSync(__dirname + '/../sprites/' + DG[n].sprite), 'data + sprite: ' + n);
+      EV[n].evolvesTo.forEach(t => assert(DG[t], 'target exists: ' + n + ' -> ' + t));
+      if (DG[n].stage !== 'Mega') { assert(EV[n].evolvesTo.length, 'dead end: ' + n); }
+      if (!JG[n] && !DV.includes(n)) { assert(seen.has(n), 'unreachable: ' + n); }
+    });
+  }
+
   // every fusion ingredient/result exists and has a sprite
   const { DIGIMON } = require('../src/data/digimon');
   const { JOGRESS } = require('../src/data/evolutions');

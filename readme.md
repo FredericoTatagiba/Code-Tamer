@@ -28,7 +28,7 @@ Every **300 XP** earned with Claude grants a **Divine Egg** ✨, which hatches s
 
 ## Evolution
 
-Every Digimon follows a branching evolution tree across 6 stages:
+476 Digimon, each following a branching evolution tree across 6 stages:
 
 - 🥚 **Fresh** → **In-Training** (20 XP)
 - **In-Training** → **Rookie** (50 XP)
@@ -66,7 +66,7 @@ Two Megas can fuse into a stronger one. When both partners are in your roster, a
 
 Code Tamer started as a fork of [**Digimon Partner**](https://github.com/amarchanttv/digimon-partner) by **amarchanttv**. The idea, the evolution tree and the pixel-art roster all come from that project — thank you for building such a fun companion for coding and for inspiring this one. 💙
 
-The fusion sprites (Omnimon, Imperialdramon Paladin Mode, Chaosmon, Darkdramon) come from the Digimon Story sprite collection on [DigimonWiki](https://digimon.fandom.com/wiki/DigimonWiki:Digimon_Story_Sprite_project). Omnimon Zwart and MetalGarurumon Black are recolors made for this project.
+The original roster of 220 comes from Digimon Partner. Code Tamer adds 256 more (476 in total): the fusions, the Holy Beasts and every other Digimon with a Digimon Story DS sprite on [DigimonWiki](https://digimon.fandom.com/wiki/DigimonWiki:Digimon_Story_Sprite_project), with evolution lines taken from the wiki's evolution data (and grouped by Digimon family where the wiki has none). Omnimon Zwart and MetalGarurumon Black are recolors made for this project.
 
 ## Disclaimer
 
