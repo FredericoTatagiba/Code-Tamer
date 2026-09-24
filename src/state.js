@@ -198,7 +198,7 @@ class DigimonState {
         lifeXP:      digi.lifeXP || 0,
         skipped,
         id:          digi.id,
-        size:        (JOGRESS[digi.currentName] || DIVINE.includes(digi.currentName)) ? 80 : (STAGE_SIZES[mon.stage] || 48),
+        size:        mon.walk ? null : (JOGRESS[digi.currentName] || DIVINE.includes(digi.currentName)) ? 80 : (STAGE_SIZES[mon.stage] || 48), // walk sprites: natural size
         name:        digi.currentName,
         stage:       mon.stage,
         sprite:      mon.sprite,
