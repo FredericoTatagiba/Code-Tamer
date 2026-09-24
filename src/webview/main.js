@@ -40,9 +40,9 @@ function render(s) {
   // Arena — only rendered on full rebuilds (this function), not on XP updates
   const visible = s.collection.filter(d => !d.unhatched && d.visible);
   const walkers = visible.map((d, i) =>
-    // walk sprites animate their own steps; the rest get a CSS hop
+    // walk sprites animate their own steps; hop ones (standing battle poses) get a CSS hop
     '<span class="walker" style="animation-delay:' + OFFSETS[i % OFFSETS.length] + '" title="' + d.name + '">' +
-      '<img src="' + u(d.sprite) + '"' + (d.size ? ' class="hop" style="height:' + d.size + 'px"' : '') + '/></span>'
+      '<img src="' + u(d.sprite) + '"' + (d.hop ? ' class="hop"' : '') + (d.size ? ' style="height:' + d.size + 'px"' : '') + '/></span>'
   ).join('');
 
   // Selected panel

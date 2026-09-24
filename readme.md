@@ -68,7 +68,7 @@ Code Tamer started as a fork of [**Digimon Partner**](https://github.com/amarcha
 
 The original roster of 220 comes from Digimon Partner. Code Tamer adds 256 more (476 in total): the fusions, the Holy Beasts and every other Digimon with a Digimon Story DS sprite on [DigimonWiki](https://digimon.fandom.com/wiki/DigimonWiki:Digimon_Story_Sprite_project), with evolution lines taken from the wiki's evolution data (and grouped by Digimon family where the wiki has none). Omnimon Zwart and MetalGarurumon Black are recolors made for this project.
 
-Walking animations for 226 Digimon come from the *Digimon World DS* sprite sheets on [The Spriters Resource](https://www.spriters-resource.com/ds_dsi/dgmnworldds/), ripped by A.J. Nitro & Dazz, redblueyellow, Mighty Jetters, RadSpyro and others. Thank you!
+Walking animations for 90 of the added Digimon come from the *Digimon World DS* sprite sheets on [The Spriters Resource](https://www.spriters-resource.com/ds_dsi/dgmnworldds/), ripped by A.J. Nitro & Dazz, redblueyellow, Mighty Jetters, RadSpyro and others. Thank you!
 
 ## Disclaimer
 
