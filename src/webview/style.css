@@ -13,8 +13,16 @@ body { background:var(--vscode-sideBar-background); color:var(--vscode-foregroun
 .walker { position:absolute; bottom:10px; animation:walk 12s linear infinite; cursor:pointer; }
 .walker img { display:block; image-rendering:pixelated; width:auto; max-height:96px; }
 .walker img.hop { animation:hop .5s steps(1) infinite; transform-origin:bottom center; }
-/* sprites face left: mirror them while walking right */
 @keyframes walk {
+  0%    { left:-32px;       transform:scaleX(1);  }
+  48%   { left:calc(100%);  transform:scaleX(1);  }
+  50%   { left:calc(100%);  transform:scaleX(-1); }
+  98%   { left:-32px;       transform:scaleX(-1); }
+  100%  { left:-32px;       transform:scaleX(1);  }
+}
+/* added (DS) sprites face left: mirror them while walking right */
+.walker.faces-left { animation-name:walk-left; }
+@keyframes walk-left {
   0%    { left:-32px;       transform:scaleX(-1); }
   48%   { left:calc(100%);  transform:scaleX(-1); }
   50%   { left:calc(100%);  transform:scaleX(1);  }

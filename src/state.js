@@ -199,6 +199,7 @@ class DigimonState {
         skipped,
         id:          digi.id,
         hop:         !!mon.hop,
+        facesLeft:   !!(mon.walk || mon.hop), // DS sprites face left; the original 220 face right
         size:        mon.walk ? null : (JOGRESS[digi.currentName] || DIVINE.includes(digi.currentName)) ? 80 : (STAGE_SIZES[mon.stage] || 48), // walk sprites: natural size
         name:        digi.currentName,
         stage:       mon.stage,

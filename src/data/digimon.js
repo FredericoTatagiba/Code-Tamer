@@ -243,7 +243,7 @@ const DIGIMON = {
   'Leviamon':                       { stage: 'Mega', sprite: 'leviamon.gif' },
   'Venommyotismon':                 { stage: 'Mega', sprite: 'venommyotismon.gif' },
   'Beelzebumon':                    { stage: 'Mega', sprite: 'beelzebumon.gif' },
-  'Metalgarurumon Black':           { stage: 'Mega', sprite: 'metalgarurumonblack.gif', hop: true },
+  'Metalgarurumon Black':           { stage: 'Mega', sprite: 'metalgarurumonblack.gif' },
   'Darkdramon':                     { stage: 'Mega', sprite: 'darkdramon.gif', walk: true },
   // DNA Digivolution only (see JOGRESS in evolutions.js)
   'Omnimon':                        { stage: 'Mega', sprite: 'omnimon.gif', walk: true },
