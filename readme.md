@@ -1,0 +1,51 @@
+# Code Tamer 🥚
+
+Raise a digital partner that evolves as you code. Real work earns XP — editing files, clean saves, passing tests, committing — and your partner digivolves from a Fresh egg all the way to Mega, right in your VSCode sidebar.
+
+## How it works
+
+Open the **Code Tamer** panel from the activity bar, hatch your first egg and start coding.
+
+| Action | XP |
+|--------|----|
+| Edit a file (at most every 5s) | +1 |
+| Save a file | +5 |
+| Save a file with no errors | +3 bonus |
+| Run a terminal command | +3 |
+| Tests pass (`npm test`, `pytest`, `phpunit`, `artisan test`, `go test`…) | +15 bonus |
+| Commit (terminal or Source Control panel) | +10 |
+
+Only real files count: Output panels and extension logs don't give XP.
+Terminal XP needs VSCode shell integration (on by default).
+
+## Evolution
+
+Every Digimon follows a branching evolution tree across 6 stages:
+
+- 🥚 **Fresh** → **In-Training** (20 XP)
+- **In-Training** → **Rookie** (50 XP)
+- **Rookie** → **Champion** (150 XP)
+- **Champion** → **Ultimate** (400 XP)
+- **Ultimate** → **Mega** (800 XP)
+
+XP beyond the requirement carries over to the next form. Click a Digimon in the roster to open its card: current XP, lifetime XP, its evolution line and the paths it didn't take.
+
+## Eggs and prestige
+
+- Every **500 XP** earns a new egg, even while other eggs are still waiting to hatch.
+- Megas keep training: every **1000 XP** at Mega earns a prestige star ★.
+
+## Roster controls
+
+- 👁 show/hide in the arena
+- ↺ reset that Digimon to its first form
+- ✕ release it (asks for confirmation)
+- **Reset All** in the footer, or `Code Tamer: Reset All` from the command palette
+
+## Credits
+
+Code Tamer started as a fork of [**Digimon Partner**](https://github.com/amarchanttv/digimon-partner) by **amarchanttv**. The idea, the evolution tree and the pixel-art roster all come from that project — thank you for building such a fun companion for coding and for inspiring this one. 💙
+
+## Disclaimer
+
+Fan-made, free and non-commercial. Not affiliated with, endorsed or sponsored by Bandai Namco or Toei Animation. Digimon and all related names and characters are trademarks of their respective owners.

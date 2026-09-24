@@ -1,0 +1,66 @@
+{
+	"name": "code-tamer",
+	"displayName": "Code Tamer",
+	"description": "Raise a digital partner that evolves as you code: earn XP by editing, clean saves, passing tests and committing.",
+	"version": "0.2.0",
+	"publisher": "CHANGE-ME",
+	"license": "SEE LICENSE IN readme.md",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/FredericoTatagiba/Code-Tamer"
+	},
+	"icon": "media/icon.png",
+	"engines": {
+		"vscode": "^1.74.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"keywords": [
+		"gamification",
+		"virtual pet",
+		"digimon",
+		"tamagotchi"
+	],
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"main": "./out/extension.js",
+	"scripts": {
+		"test": "node test/smoke.js"
+	},
+	"contributes": {
+		"commands": [
+			{
+				"command": "codeTamer.resetPartner",
+				"title": "Code Tamer: Reset All"
+			},
+			{
+				"command": "codeTamer.debug.addDigimon",
+				"title": "Code Tamer: [Debug] Add Digimon"
+			},
+			{
+				"command": "codeTamer.debug.addXP",
+				"title": "Code Tamer: [Debug] Add XP"
+			}
+		],
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "codeTamer-sidebar",
+					"title": "Code Tamer",
+					"icon": "media/icon.svg"
+				}
+			]
+		},
+		"views": {
+			"codeTamer-sidebar": [
+				{
+					"type": "webview",
+					"id": "codeTamer.mainView",
+					"name": "Your Partner"
+				}
+			]
+		}
+	}
+}
