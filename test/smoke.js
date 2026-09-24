@@ -26,8 +26,9 @@ const vscode = {
 const load = Module._load;
 Module._load = function (req, ...rest) { return req === 'vscode' ? vscode : load.call(this, req, ...rest); };
 
-const { EVOLUTIONS } = require('../out/data/evolutions');
-const ext = require('../out/extension.js');
+const vm = require('vm'), fs = require('fs');
+const { EVOLUTIONS } = require('../src/data/evolutions');
+const ext = require('../src/extension.js');
 const KEY = 'digimonState_v4';
 const ctx = { globalState: { get: k => store[k], update: async (k, v) => { store[k] = v; } }, subscriptions: [], extensionUri: { fsPath: '/x' } };
 ext.activate(ctx);
@@ -94,8 +95,8 @@ const file = { uri: { scheme: 'file' } };
   assert.strictEqual(provider.state.fuse(store[KEY].collection[0].id, 999, 'Omnimon'), false, 'no partner, no fusion');
 
   // every fusion ingredient/result exists and has a sprite
-  const { DIGIMON } = require('../out/data/digimon');
-  const { JOGRESS } = require('../out/data/evolutions');
+  const { DIGIMON } = require('../src/data/digimon');
+  const { JOGRESS } = require('../src/data/evolutions');
   Object.entries(JOGRESS).flatMap(([r, p]) => [r, ...p]).forEach(n =>
     assert(DIGIMON[n] && require('fs').existsSync(__dirname + '/../sprites/' + DIGIMON[n].sprite), 'fusion data: ' + n));
 
@@ -104,7 +105,24 @@ const file = { uri: { scheme: 'file' } };
   assert.strictEqual(store[KEY], null, 'reset button');
   fresh(); await commands['codeTamer.resetPartner']();
   assert.strictEqual(store[KEY], null, 'reset command');
-  assert(view.webview.html.includes('hatchBtn'), 'egg screen after reset');
+  assert(view.webview.html.includes('"initialized":false'), 'egg screen after reset');
+
+  // webview script: render, patch, and delegated clicks
+  store[KEY] = { collection: [mk(1, 'Wargreymon', 0), mk(2, 'Metalgarurumon', 0)], totalXP: 0, eggsEarned: 0, selected: null };
+  provider._buildHtml();
+  const els = {}, posted = [];
+  const el = id => els[id] || (els[id] = { innerHTML: '', textContent: '', style: {} });
+  el('init').textContent = view.webview.html.match(/<script type="application\/json" id="init">(.*?)<\/script>/)[1];
+  let onClick;
+  const win = { document: { getElementById: el, addEventListener: (t, f) => { onClick = f; } },
+    window: { addEventListener() {} }, acquireVsCodeApi: () => ({ postMessage: m => posted.push(m) }) };
+  vm.runInNewContext(fs.readFileSync(__dirname + '/../src/webview/main.js', 'utf8'), win);
+  assert.strictEqual((els.app.innerHTML.match(/data-cmd="fuse"/g) || []).length, 2, 'fuse buttons rendered');
+  vm.runInNewContext('updateData(SNAP)', win);
+  assert(els.roster.innerHTML.includes('data-cmd="fuse"') && els.eggLeft.textContent, 'updateData patches roster and egg bar');
+  const click = (btn, row) => onClick({ target: { closest: q => q === '[data-cmd]' ? btn : row } });
+  click({ dataset: { cmd: 'fuse', id: '1' } }); click(null, { dataset: { id: '2' } });
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(posted)), [{ command: 'fuse', id: 1 }, { command: 'select', id: 2 }], 'delegated clicks');
 
   console.log('smoke OK');
 })().catch(e => { console.error(e); process.exit(1); });
