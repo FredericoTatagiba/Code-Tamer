@@ -3,7 +3,7 @@
 
 const vscode = require('vscode');
 const { DIGIMON }                = require('./data/digimon');
-const { EVOLUTIONS, FRESH_EGGS } = require('./data/evolutions');
+const { EVOLUTIONS, FRESH_EGGS, JOGRESS } = require('./data/evolutions');
 
 const STAGE_SIZES = { 'Fresh': 24, 'In-Training': 32, 'Rookie': 48, 'Champion': 56, 'Ultimate': 62, 'Mega': 64 };
 const XP_SAVE        = 5;
@@ -34,6 +34,16 @@ function randomEgg() {
 
 function makeDigi(name) {
   return { id: Date.now() + Math.floor(Math.random() * 1000), currentName: name, xp: 0, history: [name], visible: true, unhatched: false };
+}
+
+// DNA partners for digi present in the collection: [{ result, partnerId, partnerName }]
+function fusionsFor(digi, collection) {
+  return Object.entries(JOGRESS).flatMap(([result, pair]) => {
+    const i = pair.indexOf(digi.currentName);
+    if (i < 0) { return []; }
+    const partner = collection.find(d => !d.unhatched && d.id !== digi.id && d.currentName === pair[1 - i]);
+    return partner ? [{ result, partnerId: partner.id, partnerName: partner.currentName }] : [];
+  });
 }
 
 function makeEgg() {
@@ -142,6 +152,24 @@ class DigimonState {
     this._save();
   }
 
+  // DNA Digivolution: both are consumed, XP is summed into the fused Digimon
+  fuse(id, partnerId, result) {
+    this._load();
+    const a = this.d.collection.find(d => d.id === id && !d.unhatched);
+    const b = this.d.collection.find(d => d.id === partnerId && !d.unhatched);
+    const pair = JOGRESS[result];
+    if (!a || !b || a === b || !pair || [a.currentName, b.currentName].sort().join() !== [...pair].sort().join()) { return false; }
+    const fused = Object.assign(makeDigi(result), {
+      xp:      a.xp + b.xp,
+      lifeXP:  (a.lifeXP || 0) + (b.lifeXP || 0),
+      history: [...a.history, result],
+    });
+    this.d.collection = this.d.collection.filter(d => d !== b).map(d => d === a ? fused : d);
+    if (this.d.selected === id || this.d.selected === partnerId) { this.d.selected = null; }
+    this._save();
+    return true;
+  }
+
   reset() { this.d = null; this._save(); }
   _save() { this.ctx.globalState.update(STATE_KEY, this.d); }
 
@@ -168,7 +196,7 @@ class DigimonState {
         lifeXP:      digi.lifeXP || 0,
         skipped,
         id:          digi.id,
-        size:        STAGE_SIZES[mon.stage] || 48,
+        size:        JOGRESS[digi.currentName] ? 80 : (STAGE_SIZES[mon.stage] || 48),
         name:        digi.currentName,
         stage:       mon.stage,
         sprite:      mon.sprite,
@@ -177,6 +205,7 @@ class DigimonState {
         xpPct:       (evo && evo.xpToEvolve) ? Math.min(100, digi.xp / evo.xpToEvolve * 100) : 100,
         canEvolve:   canEvolve(digi.currentName, digi.xp),
         nextOptions: opts,
+        fusions:     fusionsFor(digi, this.d.collection),
         history:     digi.history,
         visible:     digi.visible,
         selected:    digi.id === selectedId,
@@ -253,6 +282,20 @@ class DigimonSidebarProvider {
         case 'release': {
           const pick = await vscode.window.showWarningMessage('Release this Digimon?', { modal: true }, 'Yes');
           if (pick === 'Yes') { this.state.release(msg.id); this._buildHtml(); }
+          break;
+        }
+        case 'fuse': {
+          const digi = this.state.collection.find(d => d.id === msg.id);
+          const opts = digi ? fusionsFor(digi, this.state.collection) : [];
+          if (!opts.length) { break; }
+          const pick = await vscode.window.showWarningMessage(
+            'DNA Digivolve ' + opts.map(o => digi.currentName + ' + ' + o.partnerName + ' → ' + o.result).join(', ') + '? Both Digimon are consumed.',
+            { modal: true }, ...opts.map(o => o.result));
+          const opt = opts.find(o => o.result === pick);
+          if (opt && this.state.fuse(digi.id, opt.partnerId, opt.result)) {
+            this._buildHtml();
+            vscode.window.showInformationMessage('🧬 DNA Digivolved into ' + opt.result + '!');
+          }
           break;
         }
         case 'resetDigi': {
@@ -522,6 +565,7 @@ function buildRoster(collection) {
       '</div>' +
       '<div class="roster-actions">' +
         '<button class="icon-btn vis-btn" data-id="' + d.id + '">' + (d.visible ? '👁' : '🚫') + '</button>' +
+        (d.fusions.length ? '<button class="icon-btn fuse-btn" data-id="' + d.id + '" title="DNA Digivolve">🧬</button>' : '') +
         '<button class="icon-btn rstd-btn" data-id="' + d.id + '" title="Reset this Digimon">↺</button>' +
         '<button class="icon-btn danger rel-btn" data-id="' + d.id + '">✕</button>' +
       '</div>' +
@@ -541,7 +585,7 @@ function attachRosterListeners() {
   );
   document.querySelectorAll('.roster-row').forEach(row => {
     row.addEventListener('click', e => {
-      if (e.target.closest('.vis-btn') || e.target.closest('.rel-btn') || e.target.closest('.rstd-btn') || e.target.closest('.hatch-egg-btn') || row.classList.contains('egg-row')) { return; }
+      if (e.target.closest('.vis-btn') || e.target.closest('.rel-btn') || e.target.closest('.rstd-btn') || e.target.closest('.fuse-btn') || e.target.closest('.hatch-egg-btn') || row.classList.contains('egg-row')) { return; }
       vsc.postMessage({ command:'select', id: +row.dataset.id });
     });
   });
@@ -553,6 +597,9 @@ function attachRosterListeners() {
   );
   document.querySelectorAll('.rel-btn').forEach(btn =>
     btn.addEventListener('click', () => vsc.postMessage({ command:'release', id: +btn.dataset.id }))
+  );
+  document.querySelectorAll('.fuse-btn').forEach(btn =>
+    btn.addEventListener('click', () => vsc.postMessage({ command:'fuse', id: +btn.dataset.id }))
   );
 }
 

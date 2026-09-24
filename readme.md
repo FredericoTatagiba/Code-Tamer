@@ -35,9 +35,21 @@ XP beyond the requirement carries over to the next form. Click a Digimon in the 
 - Every **500 XP** earns a new egg, even while other eggs are still waiting to hatch.
 - Megas keep training: every **1000 XP** at Mega earns a prestige star ★.
 
+## DNA Digivolution 🧬
+
+Two Megas can fuse into a stronger one. When both partners are in your roster, a 🧬 button appears on their rows. Both Digimon are consumed, and the new one keeps their combined XP (and stars).
+
+| Fusion | Partners |
+|---|---|
+| Omnimon | WarGreymon + MetalGarurumon |
+| Omnimon Zwart | BlackWarGreymon + MetalGarurumon Black |
+| Imperialdramon Paladin | Imperialdramon + Omnimon |
+| Chaosmon | BanchoLeomon + Darkdramon |
+
 ## Roster controls
 
 - 👁 show/hide in the arena
+- 🧬 DNA digivolve with a partner (asks for confirmation)
 - ↺ reset that Digimon to its first form
 - ✕ release it (asks for confirmation)
 - **Reset All** in the footer, or `Code Tamer: Reset All` from the command palette
@@ -45,6 +57,8 @@ XP beyond the requirement carries over to the next form. Click a Digimon in the 
 ## Credits
 
 Code Tamer started as a fork of [**Digimon Partner**](https://github.com/amarchanttv/digimon-partner) by **amarchanttv**. The idea, the evolution tree and the pixel-art roster all come from that project — thank you for building such a fun companion for coding and for inspiring this one. 💙
+
+The fusion sprites (Omnimon, Imperialdramon Paladin Mode, Chaosmon, Darkdramon) come from the Digimon Story sprite collection on [DigimonWiki](https://digimon.fandom.com/wiki/DigimonWiki:Digimon_Story_Sprite_project). Omnimon Zwart and MetalGarurumon Black are recolors made for this project.
 
 ## Disclaimer
 

@@ -144,7 +144,7 @@ const EVOLUTIONS = {
 
   // ── Ultimate → Mega (800 XP) ──────────────────────────────────────────────
   'Metalgreymon':    { xpToEvolve: 800, evolvesTo: ['Wargreymon', 'Victorygreymon', 'Shinegreymon','Machinedramon'] },
-  'Weregarurumon':   { xpToEvolve: 800, evolvesTo: ['Metalgarurumon', 'Miragegaogamon', 'Jijimon', 'Zeedgarurumon'] },
+  'Weregarurumon':   { xpToEvolve: 800, evolvesTo: ['Metalgarurumon', 'Miragegaogamon', 'Jijimon', 'Zeedgarurumon', 'Metalgarurumon Black'] },
   'Garudamon':       { xpToEvolve: 800, evolvesTo: ['Gryphonmon', 'Magnadramon', 'Phoenixmon', 'Varodurumon'] },
   'Megakabuterimon': { xpToEvolve: 800, evolvesTo: ['Herculeskabuterimon', 'Grankuwagamon', 'Magnadramon'] },
   'Lillymon':        { xpToEvolve: 800, evolvesTo: ['Rosemon', 'Lilithmon', 'Sakuyamon'] },
@@ -156,7 +156,7 @@ const EVOLUTIONS = {
   'Cherrymon':       { xpToEvolve: 800, evolvesTo: ['Grankuwagamon', 'Puppetmon', 'Rosemon', 'Kuzuhamon'] },
   'Crescemon':       { xpToEvolve: 800, evolvesTo: ['Dianamon', 'Cherubimon', 'Leviamon'] },
   'Crowmon':         { xpToEvolve: 800, evolvesTo: ['Varodurumon', 'Kuzuhamon', 'Crossmon'] },
-  'Cyberdramon':     { xpToEvolve: 800, evolvesTo: ['Justimon', 'Imperialdramon'] },
+  'Cyberdramon':     { xpToEvolve: 800, evolvesTo: ['Justimon', 'Imperialdramon', 'Darkdramon'] },
   'Deramon':         { xpToEvolve: 800, evolvesTo: ['Varodurumon', 'Gryphonmon', 'Puppetmon'] },
   'Divermon':        { xpToEvolve: 800, evolvesTo: ['Plesiomon', 'Pukumon', 'Neptunemon'] },
   'Dragomon':        { xpToEvolve: 800, evolvesTo: ['Neptunemon', 'Leviamon'] },
@@ -169,7 +169,7 @@ const EVOLUTIONS = {
   'Machgaogamon':    { xpToEvolve: 800, evolvesTo: ['Miragegaogamon', 'Megagargomon', 'Metalgarurumon', 'Justimon', 'Zeedgarurumon'] },
   'Mamemon':         { xpToEvolve: 800, evolvesTo: ['Justimon', 'Princemamemon', 'Pukumon', 'Puppetmon'] },
   'Mammothmon':      { xpToEvolve: 800, evolvesTo: ['Skullmammothmon', 'Vikemon'] },
-  'Megadramon':      { xpToEvolve: 800, evolvesTo: ['Machinedramon', 'Wargreymon', 'Blackwargreymon'] },
+  'Megadramon':      { xpToEvolve: 800, evolvesTo: ['Machinedramon', 'Wargreymon', 'Blackwargreymon', 'Darkdramon'] },
   'Megaseadramon':   { xpToEvolve: 800, evolvesTo: ['Metalseadramon', 'Gigaseadramon', 'Plesiomon', 'Leviamon', 'Neptunemon' ] },
   'Metaltyrannomon': { xpToEvolve: 800, evolvesTo: ['Machinedramon', 'Brakedramon', 'Blackwargreymon'] },
   'Monzaemon':       { xpToEvolve: 800, evolvesTo: ['Saberleomon', 'Seraphimon', 'Sakuyamon'] },
@@ -250,6 +250,20 @@ const EVOLUTIONS = {
   'Leviamon':         { xpToEvolve: null, evolvesTo: [] },
   'Venommyotismon':         { xpToEvolve: null, evolvesTo: [] },
   'Beelzebumon':         { xpToEvolve: null, evolvesTo: [] },
+  'Metalgarurumon Black':   { xpToEvolve: null, evolvesTo: [] },
+  'Darkdramon':             { xpToEvolve: null, evolvesTo: [] },
+  'Omnimon':                { xpToEvolve: null, evolvesTo: [] },
+  'Omnimon Zwart':          { xpToEvolve: null, evolvesTo: [] },
+  'Imperialdramon Paladin': { xpToEvolve: null, evolvesTo: [] },
+  'Chaosmon':               { xpToEvolve: null, evolvesTo: [] },
+};
+
+// DNA Digivolution: two Megas fuse into one (both are consumed)
+const JOGRESS = {
+  'Omnimon':                ['Wargreymon', 'Metalgarurumon'],
+  'Omnimon Zwart':          ['Blackwargreymon', 'Metalgarurumon Black'],
+  'Imperialdramon Paladin': ['Imperialdramon', 'Omnimon'],
+  'Chaosmon':               ['Bancholeomon', 'Darkdramon'],
 };
 
 const { DIGIMON } = require('./digimon');
@@ -257,4 +271,4 @@ const { DIGIMON } = require('./digimon');
 // Automatically includes any Digimon with stage 'Fresh' — no need to update manually
 const FRESH_EGGS = Object.keys(DIGIMON).filter(name => DIGIMON[name].stage === 'Fresh');
 
-module.exports = { EVOLUTIONS, FRESH_EGGS };
+module.exports = { EVOLUTIONS, FRESH_EGGS, JOGRESS };

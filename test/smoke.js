@@ -10,7 +10,7 @@ const vscode = {
   Uri: { joinPath: (...a) => ({ fsPath: a.join('/') }) },
   DiagnosticSeverity: { Error: 0, Warning: 1 },
   window: {
-    showWarningMessage: async (...a) => (a[1] && a[1].modal ? 'Yes' : undefined), // DND hides non-modal
+    showWarningMessage: async (...a) => (a[1] && a[1].modal ? a[2] : undefined), // DND hides non-modal; picks first button
     showInformationMessage: async () => {},
     registerWebviewViewProvider: (id, p) => { assert.strictEqual(id, 'codeTamer.mainView'); provider = p; return { dispose() {} }; },
     onDidEndTerminalShellExecution: on('term'),
@@ -78,6 +78,26 @@ const file = { uri: { scheme: 'file' } };
   store[KEY].collection[0] = { id: 1, currentName: mega, xp: 2500, history: [mega], visible: true, unhatched: false };
   const m = provider.state.snapshot().collection[0];
   assert.deepStrictEqual([m.stars, m.starXP], [2, 500], 'prestige stars');
+
+  // DNA Digivolution: both consumed, XP summed, chains into another fusion
+  const mk = (id, name, xp) => ({ id, currentName: name, xp, lifeXP: xp, history: ['Koromon', name], visible: true, unhatched: false });
+  store[KEY].collection = [mk(1, 'Wargreymon', 1200), mk(2, 'Imperialdramon', 300), mk(3, 'Metalgarurumon', 900)];
+  const fz = () => provider.state.snapshot().collection.map(d => [d.name, d.fusions.map(f => f.result)]);
+  assert.deepStrictEqual(fz(), [['Wargreymon', ['Omnimon']], ['Imperialdramon', []], ['Metalgarurumon', ['Omnimon']]], 'fusions offered');
+  await send({ command: 'fuse', id: 3 });
+  const o = store[KEY].collection;
+  assert.deepStrictEqual(o.map(d => d.currentName), ['Imperialdramon', 'Omnimon'], 'both consumed');
+  assert.deepStrictEqual([o[1].xp, o[1].lifeXP, o[1].history], [2100, 2100, ['Koromon', 'Metalgarurumon', 'Omnimon']], 'XP summed');
+  assert.strictEqual(provider.state.snapshot().collection[1].stars, 2, 'stars carry over');
+  await send({ command: 'fuse', id: 2 });
+  assert.deepStrictEqual(store[KEY].collection.map(d => [d.currentName, d.xp]), [['Imperialdramon Paladin', 2400]], 'chained fusion');
+  assert.strictEqual(provider.state.fuse(store[KEY].collection[0].id, 999, 'Omnimon'), false, 'no partner, no fusion');
+
+  // every fusion ingredient/result exists and has a sprite
+  const { DIGIMON } = require('../out/data/digimon');
+  const { JOGRESS } = require('../out/data/evolutions');
+  Object.entries(JOGRESS).flatMap(([r, p]) => [r, ...p]).forEach(n =>
+    assert(DIGIMON[n] && require('fs').existsSync(__dirname + '/../sprites/' + DIGIMON[n].sprite), 'fusion data: ' + n));
 
   // reset all: button and command
   await send({ command: 'reset' });
