@@ -102,7 +102,8 @@ function buildSelPanel(sel) {
     '<div class="card">' +
       '<div class="row"><span class="lbl">Lifetime XP</span><span class="val">' + sel.lifeXP + '</span></div>' +
       '<div class="card-line">' + sel.history.join(' → ') + '</div>' +
-      (sel.skipped.length ? '<div class="card-skip">Paths not taken: ' + sel.skipped.join(', ') + '</div>' : '') +
+      (sel.skipped.length ? '<div class="card-skip">Paths not taken:' +
+        sel.skipped.map(([stage, names]) => '<br><b>' + stage + ':</b> ' + names.join(', ')).join('') + '</div>' : '') +
     '</div>';
   return '<div class="xp-section">' + xpRows + '</div>' + evoHtml + card;
 }

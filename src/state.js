@@ -189,9 +189,11 @@ class DigimonState {
       }
       const opts = evo ? evo.evolvesTo.filter(n => DIGIMON[n]).map(n => ({ name: n, sprite: DIGIMON[n].sprite, stage: DIGIMON[n].stage })) : [];
       const isMega = !evo || evo.xpToEvolve === null;
-      // branches not taken at each past evolution step
-      const skipped = digi.history.slice(0, -1).flatMap((n, i) =>
-        ((EVOLUTIONS[n] || {}).evolvesTo || []).filter(t => t !== digi.history[i + 1]));
+      // branches not taken at each past evolution step, as [stage, names]
+      const skipped = digi.history.slice(0, -1).map((n, i) => {
+        const next = digi.history[i + 1];
+        return [(DIGIMON[next] || {}).stage, ((EVOLUTIONS[n] || {}).evolvesTo || []).filter(t => t !== next)];
+      }).filter(([, names]) => names.length);
       return {
         stars:       isMega ? Math.floor(digi.xp / XP_PER_STAR) : 0,
         starXP:      isMega ? digi.xp % XP_PER_STAR : 0,

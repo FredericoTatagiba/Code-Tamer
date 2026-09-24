@@ -71,7 +71,7 @@ const file = { uri: { scheme: 'file' } };
   await send({ command: 'evolve', id: 1, target });
   assert.deepStrictEqual([digi().currentName, digi().xp], [target, 37], 'overflow carried');
   const snap = provider.state.snapshot().collection[0];
-  assert(snap.skipped.includes(other), 'skipped branch listed');
+  assert(snap.skipped.some(([, names]) => names.includes(other)), 'skipped branch listed');
   await send({ command: 'resetDigi', id: 1 });
   assert.deepStrictEqual([digi().currentName, digi().xp, digi().history], [base, 0, [base]], 'resetDigi');
 
