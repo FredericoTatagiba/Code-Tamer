@@ -2,7 +2,7 @@
 	"name": "code-tamer",
 	"displayName": "Code Tamer",
 	"description": "Raise a digital partner that evolves as you code: earn XP by editing, clean saves, passing tests and committing.",
-	"version": "0.4.0",
+	"version": "0.4.1",
 	"publisher": "CHANGE-ME",
 	"license": "SEE LICENSE IN readme.md",
 	"repository": {
@@ -42,6 +42,10 @@
 			{
 				"command": "codeTamer.debug.addXP",
 				"title": "Code Tamer: [Debug] Add XP"
+			},
+			{
+				"command": "codeTamer.debug.testKit",
+				"title": "Code Tamer: [Debug] Test Kit (fusions, evolutions, Divine Egg)"
 			}
 		],
 		"configuration": {

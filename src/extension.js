@@ -3,6 +3,7 @@
 
 const vscode = require('vscode');
 const { DIGIMON }                         = require('./data/digimon');
+const { EVOLUTIONS, JOGRESS }             = require('./data/evolutions');
 const { DigimonState }                    = require('./state');
 const { DigimonSidebarProvider, confirm } = require('./sidebar');
 const { watchClaude }                     = require('./claude');
@@ -93,6 +94,24 @@ function activate(ctx) {
         provider._buildHtml();
         vscode.window.showInformationMessage('✨ Added ' + amount + ' XP to all Digimon!');
       }
+    })
+  );
+
+  // Adds (never replaces) everything needed to try fusions, the Divine Egg and the widest evolution branches
+  ctx.subscriptions.push(
+    vscode.commands.registerCommand('codeTamer.debug.testKit', () => {
+      state._load();
+      if (!state.ready) { vscode.window.showWarningMessage('Hatch your first egg first.'); return; }
+      const megas = [...new Set(Object.values(JOGRESS).flat())].filter(n => !JOGRESS[n]);
+      megas.forEach(n => state.add(n, 1000));
+      ['Fresh', 'In-Training', 'Rookie', 'Champion', 'Ultimate'].forEach(stage => {
+        const widest = Object.keys(DIGIMON).filter(n => DIGIMON[n].stage === stage)
+          .sort((a, b) => EVOLUTIONS[b].evolvesTo.length - EVOLUTIONS[a].evolvesTo.length)[0];
+        state.add(widest, EVOLUTIONS[widest].xpToEvolve);
+      });
+      state.addEgg(true);
+      provider._buildHtml();
+      vscode.window.showInformationMessage('🧪 Test kit added: ' + megas.length + ' fusion Megas, 5 Digimon ready to evolve and a Divine Egg.');
     })
   );
 

@@ -160,9 +160,15 @@ class DigimonState {
     return true;
   }
 
-  add(name) {
+  add(name, xp = 0) {
     this._load();
-    this.d.collection.push(makeDigi(name));
+    this.d.collection.push(Object.assign(makeDigi(name), { xp, lifeXP: xp }));
+    this._save();
+  }
+
+  addEgg(divine = false) {
+    this._load();
+    this.d.collection.push(Object.assign(makeEgg(), divine ? { divine: true } : {}));
     this._save();
   }
 

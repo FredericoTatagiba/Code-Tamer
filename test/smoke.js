@@ -151,6 +151,15 @@ const file = { uri: { scheme: 'file' } };
   assert(provider.state.snapshot().collection.find(d => d.id === egg.id).divine, 'snapshot marks divine');
   assert(DIVINE.includes(provider.state.hatchEgg(egg.id)), 'hatches a Holy Beast');
 
+  // debug test kit: appends fusion Megas, ready-to-evolve Digimon and a Divine Egg
+  store[KEY] = { collection: [mk(1, 'Agumon', 0)], totalXP: 0, eggsEarned: 0, selected: null };
+  commands['codeTamer.debug.testKit']();
+  const kit = provider.state.snapshot().collection;
+  assert.strictEqual(kit[0].name, 'Agumon', 'kit keeps the current partner');
+  assert(kit.some(d => d.fusions && d.fusions.some(f => f.result === 'Omnimon')), 'kit enables Omnimon fusion');
+  assert.strictEqual(kit.filter(d => d.canEvolve).length, 5, 'one ready-to-evolve Digimon per stage');
+  assert(kit.some(d => d.unhatched && d.divine), 'kit has a Divine Egg');
+
   // reset all: button and command
   await send({ command: 'reset' });
   assert.strictEqual(store[KEY], null, 'reset button');
