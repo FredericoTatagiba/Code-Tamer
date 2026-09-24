@@ -32,6 +32,11 @@ function randomEgg() {
   return FRESH_EGGS[Math.floor(Math.random() * FRESH_EGGS.length)];
 }
 
+// modal: Do Not Disturb hides non-modal warnings and their promise never resolves
+async function confirm(message) {
+  return (await vscode.window.showWarningMessage(message, { modal: true }, 'Yes')) === 'Yes';
+}
+
 function makeDigi(name) {
   return { id: Date.now() + Math.floor(Math.random() * 1000), currentName: name, xp: 0, history: [name], visible: true, unhatched: false };
 }
@@ -170,6 +175,12 @@ class DigimonState {
     return true;
   }
 
+  add(name) {
+    this._load();
+    this.d.collection.push(makeDigi(name));
+    this._save();
+  }
+
   reset() { this.d = null; this._save(); }
   _save() { this.ctx.globalState.update(STATE_KEY, this.d); }
 
@@ -232,12 +243,10 @@ class DigimonState {
 class DigimonSidebarProvider {
   constructor(ctx, state) {
     this.ctx = ctx; this.state = state; this._view = null;
-    this._htmlBuilt = false; // track whether we've set the full HTML yet
   }
 
   resolveWebviewView(webviewView) {
     this._view = webviewView;
-    this._htmlBuilt = false;
     webviewView.webview.options = {
       enableScripts: true,
       localResourceRoots: [
@@ -280,8 +289,7 @@ class DigimonSidebarProvider {
           break;
         }
         case 'release': {
-          const pick = await vscode.window.showWarningMessage('Release this Digimon?', { modal: true }, 'Yes');
-          if (pick === 'Yes') { this.state.release(msg.id); this._buildHtml(); }
+          if (await confirm('Release this Digimon?')) { this.state.release(msg.id); this._buildHtml(); }
           break;
         }
         case 'fuse': {
@@ -299,13 +307,11 @@ class DigimonSidebarProvider {
           break;
         }
         case 'resetDigi': {
-          const pick = await vscode.window.showWarningMessage('Reset this Digimon to its first form?', { modal: true }, 'Yes');
-          if (pick === 'Yes') { this.state.resetDigi(msg.id); this._buildHtml(); }
+          if (await confirm('Reset this Digimon to its first form?')) { this.state.resetDigi(msg.id); this._buildHtml(); }
           break;
         }
         case 'reset': {
-          const confirm = await vscode.window.showWarningMessage('Reset everything?', { modal: true }, 'Yes');
-          if (confirm === 'Yes') { this.state.reset(); this._buildHtml(); }
+          if (await confirm('Reset everything?')) { this.state.reset(); this._buildHtml(); }
           break;
         }
       }
@@ -327,28 +333,16 @@ class DigimonSidebarProvider {
   _pushUpdate() {
     if (!this._view) { return; }
     const snap = this.state.snapshot();
-    const uris = {};
-    if (snap.initialized) {
-      snap.spritesNeeded.forEach(s => { uris[s] = this._uri(s); });
-    }
-    this._view.webview.postMessage({ command: 'update', snap, uris });
+    this._view.webview.postMessage({ command: 'update', snap, uris: this._uris(snap) });
     this._updateBadge();
   }
 
   // Full HTML rebuild — only for structural changes (new digimon, evolve, hatch)
   _buildHtml() {
     if (!this._view) { return; }
-    this._htmlBuilt = true;
     const snap  = this.state.snapshot();
     const nonce = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
     const csp   = this._view.webview.cspSource;
-
-    const uris = {};
-    if (snap.initialized) {
-      snap.spritesNeeded.forEach(s => { uris[s] = this._uri(s); });
-    }
-
-    const walkOffsets = ['0s', '-2.3s', '-4.6s', '-1.1s', '-3.4s'];
 
     this._view.webview.html = `<!DOCTYPE html>
 <html lang="en">
@@ -429,11 +423,25 @@ body { background:var(--vscode-sideBar-background); color:var(--vscode-foregroun
 <script nonce="${nonce}">
 const vsc      = acquireVsCodeApi();
 let   SNAP     = ${JSON.stringify(snap)};
-let   URIS     = ${JSON.stringify(uris)};
-const OFFSETS  = ${JSON.stringify(walkOffsets)};
+let   URIS     = ${JSON.stringify(this._uris(snap))};
+const OFFSETS  = ['0s', '-2.3s', '-4.6s', '-1.1s', '-3.4s'];
 const STAR_XP  = ${XP_PER_STAR};
+const EGG_XP   = ${XP_PER_NEW_EGG};
 
 function u(f) { return URIS[f] || ''; }
+
+function eggProgress(s) {
+  const left = s.nextEggXP - s.eggXP;
+  return { pct: (s.eggXP % EGG_XP) / EGG_XP * 100, label: left > 0 ? left + ' XP' : 'Ready!' };
+}
+
+// One delegated listener survives every re-render: buttons carry data-cmd, rows select
+document.addEventListener('click', e => {
+  const btn = e.target.closest('[data-cmd]');
+  if (btn) { vsc.postMessage({ command: btn.dataset.cmd, id: btn.dataset.id && +btn.dataset.id, target: btn.dataset.t }); return; }
+  const row = e.target.closest('.roster-row:not(.egg-row)');
+  if (row) { vsc.postMessage({ command: 'select', id: +row.dataset.id }); }
+});
 
 // ── Called on full renders AND on postMessage updates ──────────────────────
 function render(s) {
@@ -445,9 +453,8 @@ function render(s) {
         '<span class="egg-icon">🥚</span>' +
         '<h2>A mystery egg...</h2>' +
         '<p>Something is waiting inside.<br>Click to hatch your partner!</p>' +
-        '<button class="hatch-btn" id="hatchBtn">Hatch Egg</button>' +
+        '<button class="hatch-btn" id="hatchBtn" data-cmd="hatch">Hatch Egg</button>' +
       '</div>';
-    document.getElementById('hatchBtn').addEventListener('click', () => vsc.postMessage({ command:'hatch' }));
     return;
   }
 
@@ -461,56 +468,31 @@ function render(s) {
   const sel = s.collection.find(d => !d.unhatched && d.selected) || null;
   const selPanel = buildSelPanel(sel);
 
-  // Next egg progress
-  const eggPct  = Math.min(100, (s.eggXP % 500) / 5);
-  const eggLeft = s.nextEggXP - s.eggXP;
-  const eggProgress =
-    '<div class="egg-progress">' +
-      '<div class="row"><span class="lbl">🥚 Next egg</span><span class="val">' + (eggLeft > 0 ? eggLeft + ' XP' : 'Ready!') + '</span></div>' +
-      '<div class="bar-bg"><div id="eggBar" class="bar-fill" style="width:' + eggPct + '%;background:linear-gradient(90deg,#f9e2af,#fab387)"></div></div>' +
-    '</div>';
-
-  // Roster
-  const rosterRows = buildRoster(s.collection);
-
+  const egg = eggProgress(s);
   app.innerHTML =
     '<div class="arena" id="arena">' + walkers + '</div>' +
     '<div id="selPanel">' + selPanel + '</div>' +
-    eggProgress +
+    '<div class="egg-progress">' +
+      '<div class="row"><span class="lbl">🥚 Next egg</span><span class="val" id="eggLeft">' + egg.label + '</span></div>' +
+      '<div class="bar-bg"><div id="eggBar" class="bar-fill" style="width:' + egg.pct + '%;background:linear-gradient(90deg,#f9e2af,#fab387)"></div></div>' +
+    '</div>' +
     '<div style="flex:1;display:flex;flex-direction:column;min-height:0;">' +
     '<div class="roster-label">Your Digimon</div>' +
-    '<div class="roster" id="roster">' + rosterRows + '</div>' +
+    '<div class="roster" id="roster">' + buildRoster(s.collection) + '</div>' +
     '</div>' +
-    '<div class="footer"><span class="total" id="totalXp">Total XP: ' + s.totalXP + '</span><button class="rst-btn" id="rst">Reset All</button></div>';
-
-  attachListeners();
+    '<div class="footer"><span class="total" id="totalXp">Total XP: ' + s.totalXP + '</span><button class="rst-btn" id="rst" data-cmd="reset">Reset All</button></div>';
 }
 
 // ── Only updates XP numbers + roster state, never touches the arena ────────
 function updateData(s) {
-  // Update selected panel
+  if (!s.initialized || !document.getElementById('roster')) { return; }
   const sel = s.collection.find(d => !d.unhatched && d.selected) || null;
-  const selEl = document.getElementById('selPanel');
-  if (selEl) { selEl.innerHTML = buildSelPanel(sel); attachEvoListeners(); }
-
-  // Update egg progress bar
-  const eggPct  = Math.min(100, (s.eggXP % 500) / 5);
-  const eggLeft = s.nextEggXP - s.eggXP;
-  const bar = document.getElementById('eggBar');
-  if (bar) { bar.style.width = eggPct + '%'; }
-  const eggRow = bar && bar.closest('.egg-progress');
-  if (eggRow) {
-    const valEl = eggRow.querySelector('.val');
-    if (valEl) { valEl.textContent = eggLeft > 0 ? eggLeft + ' XP' : 'Ready!'; }
-  }
-
-  // Update roster rows (XP bars, evolve badges) without replacing the whole list
-  const roster = document.getElementById('roster');
-  if (roster) { roster.innerHTML = buildRoster(s.collection); attachRosterListeners(); }
-
-  // Total XP
-  const totalEl = document.getElementById('totalXp');
-  if (totalEl) { totalEl.textContent = 'Total XP: ' + s.totalXP; }
+  const egg = eggProgress(s);
+  document.getElementById('selPanel').innerHTML = buildSelPanel(sel);
+  document.getElementById('eggBar').style.width = egg.pct + '%';
+  document.getElementById('eggLeft').textContent = egg.label;
+  document.getElementById('roster').innerHTML = buildRoster(s.collection);
+  document.getElementById('totalXp').textContent = 'Total XP: ' + s.totalXP;
 }
 
 function buildSelPanel(sel) {
@@ -519,7 +501,7 @@ function buildSelPanel(sel) {
   let evoHtml = '';
   if (sel.canEvolve && sel.nextOptions.length > 0) {
     const btns = sel.nextOptions.map(o =>
-      '<button class="evo-btn" data-id="' + sel.id + '" data-t="' + o.name + '">' +
+      '<button class="evo-btn" data-cmd="evolve" data-id="' + sel.id + '" data-t="' + o.name + '">' +
         '<img src="' + u(o.sprite) + '"/>' + o.name +
         '<span class="evo-stage">(' + o.stage + ')</span>' +
       '</button>'
@@ -550,7 +532,7 @@ function buildRoster(collection) {
       return '<div class="roster-row egg-row" data-id="' + d.id + '">' +
         '<span style="font-size:24px;flex-shrink:0">🥚</span>' +
         '<div class="roster-info"><div class="roster-name">Mystery Egg</div><div class="roster-stage">Waiting to hatch...</div></div>' +
-        '<div class="roster-actions"><button class="icon-btn hatch-egg-btn" data-id="' + d.id + '" style="width:auto;padding:0 6px;opacity:1;background:#f9e2af;color:#11111b;border-color:#f9e2af;font-weight:700">Hatch</button></div>' +
+        '<div class="roster-actions"><button class="icon-btn" data-cmd="hatchEgg" data-id="' + d.id + '" style="width:auto;padding:0 6px;opacity:1;background:#f9e2af;color:#11111b;border-color:#f9e2af;font-weight:700">Hatch</button></div>' +
       '</div>';
     }
     return '<div class="roster-row' +
@@ -564,50 +546,13 @@ function buildRoster(collection) {
         '<div class="roster-stage">' + d.stage + ' · ' + d.history.join(' → ') + '</div>' +
       '</div>' +
       '<div class="roster-actions">' +
-        '<button class="icon-btn vis-btn" data-id="' + d.id + '">' + (d.visible ? '👁' : '🚫') + '</button>' +
-        (d.fusions.length ? '<button class="icon-btn fuse-btn" data-id="' + d.id + '" title="DNA Digivolve">🧬</button>' : '') +
-        '<button class="icon-btn rstd-btn" data-id="' + d.id + '" title="Reset this Digimon">↺</button>' +
-        '<button class="icon-btn danger rel-btn" data-id="' + d.id + '">✕</button>' +
+        '<button class="icon-btn" data-cmd="toggleVisible" data-id="' + d.id + '">' + (d.visible ? '👁' : '🚫') + '</button>' +
+        (d.fusions.length ? '<button class="icon-btn" data-cmd="fuse" data-id="' + d.id + '" title="DNA Digivolve">🧬</button>' : '') +
+        '<button class="icon-btn" data-cmd="resetDigi" data-id="' + d.id + '" title="Reset this Digimon">↺</button>' +
+        '<button class="icon-btn danger" data-cmd="release" data-id="' + d.id + '">✕</button>' +
       '</div>' +
     '</div>';
   }).join('');
-}
-
-function attachEvoListeners() {
-  document.querySelectorAll('.evo-btn').forEach(btn =>
-    btn.addEventListener('click', () => vsc.postMessage({ command:'evolve', id: +btn.dataset.id, target: btn.dataset.t }))
-  );
-}
-
-function attachRosterListeners() {
-  document.querySelectorAll('.hatch-egg-btn').forEach(btn =>
-    btn.addEventListener('click', () => vsc.postMessage({ command:'hatchEgg', id: +btn.dataset.id }))
-  );
-  document.querySelectorAll('.roster-row').forEach(row => {
-    row.addEventListener('click', e => {
-      if (e.target.closest('.vis-btn') || e.target.closest('.rel-btn') || e.target.closest('.rstd-btn') || e.target.closest('.fuse-btn') || e.target.closest('.hatch-egg-btn') || row.classList.contains('egg-row')) { return; }
-      vsc.postMessage({ command:'select', id: +row.dataset.id });
-    });
-  });
-  document.querySelectorAll('.vis-btn').forEach(btn =>
-    btn.addEventListener('click', () => vsc.postMessage({ command:'toggleVisible', id: +btn.dataset.id }))
-  );
-  document.querySelectorAll('.rstd-btn').forEach(btn =>
-    btn.addEventListener('click', () => vsc.postMessage({ command:'resetDigi', id: +btn.dataset.id }))
-  );
-  document.querySelectorAll('.rel-btn').forEach(btn =>
-    btn.addEventListener('click', () => vsc.postMessage({ command:'release', id: +btn.dataset.id }))
-  );
-  document.querySelectorAll('.fuse-btn').forEach(btn =>
-    btn.addEventListener('click', () => vsc.postMessage({ command:'fuse', id: +btn.dataset.id }))
-  );
-}
-
-function attachListeners() {
-  attachEvoListeners();
-  attachRosterListeners();
-  const rst = document.getElementById('rst');
-  if (rst) { rst.addEventListener('click', () => vsc.postMessage({ command:'reset' })); }
 }
 
 // ── Listen for updates from extension ─────────────────────────────────────
@@ -636,10 +581,12 @@ render(SNAP);
     this._view.badge = total > 0 ? { value: total, tooltip: total + ' action(s) needed' } : undefined;
   }
 
-  _uri(f) {
-    return this._view.webview.asWebviewUri(
-      vscode.Uri.joinPath(this.ctx.extensionUri, 'sprites', f)
-    ).toString();
+  _uris(snap) {
+    const uris = {};
+    (snap.spritesNeeded || []).forEach(f => {
+      uris[f] = this._view.webview.asWebviewUri(vscode.Uri.joinPath(this.ctx.extensionUri, 'sprites', f)).toString();
+    });
+    return uris;
   }
 }
 
@@ -704,15 +651,12 @@ function activate(ctx) {
     vscode.commands.registerCommand('codeTamer.debug.addDigimon', async () => {
       state._load();
       if (!state.ready) { vscode.window.showWarningMessage('Hatch your first egg first.'); return; }
-      const names = Object.keys(DIGIMON);
       const pick = await vscode.window.showQuickPick(
-        names.map(n => ({ label: n, description: DIGIMON[n].stage })),
+        Object.keys(DIGIMON).map(n => ({ label: n, description: DIGIMON[n].stage })),
         { placeHolder: 'Pick a Digimon to add to your collection' }
       );
       if (pick) {
-        const digi = makeDigi(pick.label);
-        state.d.collection.push(digi);
-        state._save();
+        state.add(pick.label);
         provider._buildHtml();
         vscode.window.showInformationMessage('🐉 Added ' + pick.label + ' to your collection!');
       }
@@ -733,8 +677,7 @@ function activate(ctx) {
 
   ctx.subscriptions.push(
     vscode.commands.registerCommand('codeTamer.resetPartner', async () => {
-      const pick = await vscode.window.showWarningMessage('Reset all Digimon?', { modal: true }, 'Yes');
-      if (pick === 'Yes') { state.reset(); provider._buildHtml(); }
+      if (await confirm('Reset all Digimon?')) { state.reset(); provider._buildHtml(); }
     })
   );
 }
