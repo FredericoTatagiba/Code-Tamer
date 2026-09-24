@@ -5,6 +5,7 @@ const vscode = require('vscode');
 const { DIGIMON }                         = require('./data/digimon');
 const { DigimonState }                    = require('./state');
 const { DigimonSidebarProvider, confirm } = require('./sidebar');
+const { watchClaude }                     = require('./claude');
 const { XP_SAVE, XP_CLEAN_SAVE, XP_EDIT, XP_TERMINAL, XP_TEST_PASS, XP_COMMIT, isTestCommand } = require('./xp');
 
 function activate(ctx) {
@@ -17,7 +18,12 @@ function activate(ctx) {
     })
   );
 
-  const gain = (n) => provider.refresh(state.addXP(n));
+  const gain = (n, fromClaude) => provider.refresh(state.addXP(n, fromClaude));
+
+  // prompts and edits made with Claude Code in this workspace
+  const claude = watchClaude((vscode.workspace.workspaceFolders || []).map(f => f.uri.fsPath), n => gain(n, true),
+    { enabled: () => vscode.workspace.getConfiguration('codeTamer').get('claudeCode', true) });
+  ctx.subscriptions.push(claude);
 
   ctx.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(doc => {

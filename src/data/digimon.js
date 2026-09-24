@@ -250,6 +250,11 @@ const DIGIMON = {
   'Omnimon Zwart':           { stage: 'Mega', sprite: 'omnimonzwart.gif' },
   'Imperialdramon Paladin':  { stage: 'Mega', sprite: 'imperialdramonpaladin.gif' },
   'Chaosmon':                { stage: 'Mega', sprite: 'chaosmon.gif' },
+  // Divine Eggs only (Claude Code XP, see DIVINE in evolutions.js)
+  'Azulongmon':              { stage: 'Mega', sprite: 'azulongmon.gif' },
+  'Baihumon':                { stage: 'Mega', sprite: 'baihumon.gif' },
+  'Ebonwumon':               { stage: 'Mega', sprite: 'ebonwumon.gif' },
+  'Zhuqiaomon':              { stage: 'Mega', sprite: 'zhuqiaomon.gif' },
 };
 
 module.exports = { DIGIMON };

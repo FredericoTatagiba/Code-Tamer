@@ -14,9 +14,17 @@ Open the **Code Tamer** panel from the activity bar, hatch your first egg and st
 | Run a terminal command | +3 |
 | Tests pass (`npm test`, `pytest`, `phpunit`, `artisan test`, `go test`…) | +15 bonus |
 | Commit (terminal or Source Control panel) | +10 |
+| Send a prompt to [Claude Code](https://claude.com/claude-code) in this workspace | +2 |
+| Claude Code edits or writes a file | +1 |
 
 Only real files count: Output panels and extension logs don't give XP.
 Terminal XP needs VSCode shell integration (on by default).
+
+### Claude Code ✨
+
+Code Tamer reads the Claude Code session logs for your workspace (`~/.claude/projects/…`), both from the CLI and the VSCode extension. It only looks at event types and tool names, never at your prompts or code, and only counts what happens after VSCode starts. Turn it off with the `codeTamer.claudeCode` setting.
+
+Every **300 XP** earned with Claude grants a **Divine Egg** ✨, which hatches straight into one of the Four Holy Beasts: Azulongmon, Baihumon, Ebonwumon or Zhuqiaomon.
 
 ## Evolution
 

@@ -2,8 +2,8 @@
 'use strict';
 
 const { DIGIMON }                          = require('./data/digimon');
-const { EVOLUTIONS, FRESH_EGGS, JOGRESS }  = require('./data/evolutions');
-const { XP_PER_NEW_EGG, XP_PER_STAR }      = require('./xp');
+const { EVOLUTIONS, FRESH_EGGS, JOGRESS, DIVINE } = require('./data/evolutions');
+const { XP_PER_NEW_EGG, XP_PER_STAR, XP_PER_DIVINE_EGG } = require('./xp');
 
 const STATE_KEY = 'digimonState_v4';
 const STAGE_SIZES = { 'Fresh': 24, 'In-Training': 32, 'Rookie': 48, 'Champion': 56, 'Ultimate': 62, 'Mega': 64 };
@@ -13,9 +13,7 @@ function canEvolve(name, xp) {
   return evo && evo.xpToEvolve !== null && xp >= evo.xpToEvolve && evo.evolvesTo.length > 0;
 }
 
-function randomEgg() {
-  return FRESH_EGGS[Math.floor(Math.random() * FRESH_EGGS.length)];
-}
+const pick = list => list[Math.floor(Math.random() * list.length)];
 
 function makeDigi(name) {
   return { id: Date.now() + Math.floor(Math.random() * 1000), currentName: name, xp: 0, history: [name], visible: true, unhatched: false };
@@ -52,13 +50,14 @@ class DigimonState {
   get totalXP()    { return this.d ? this.d.totalXP : 0; }
 
   hatchFirst() {
-    const name = randomEgg();
+    const name = pick(FRESH_EGGS);
     this.d = { collection: [makeDigi(name)], totalXP: 0, eggsEarned: 0, selected: null };
     this._save();
     return name;
   }
 
-  addXP(n) {
+  // returns 'divine' | true (new egg) | null
+  addXP(n, fromClaude = false) {
     this._load();
     if (!this.ready) { return null; }
     this.d.totalXP += n;
@@ -71,6 +70,14 @@ class DigimonState {
       this.d.collection.push(makeEgg());
       newEgg = true;
     }
+    if (fromClaude) {
+      this.d.claudeXP = (this.d.claudeXP || 0) + n;
+      while (Math.floor(this.d.claudeXP / XP_PER_DIVINE_EGG) > (this.d.divineEggsEarned || 0)) {
+        this.d.divineEggsEarned = (this.d.divineEggsEarned || 0) + 1;
+        this.d.collection.push(Object.assign(makeEgg(), { divine: true }));
+        newEgg = 'divine';
+      }
+    }
     this._save();
     return newEgg;
   }
@@ -79,7 +86,7 @@ class DigimonState {
     this._load();
     const egg = this.d.collection.find(d => d.id === id && d.unhatched);
     if (!egg) { return null; }
-    const name = randomEgg();
+    const name = pick(egg.divine ? DIVINE : FRESH_EGGS);
     egg.unhatched = false;
     egg.currentName = name;
     egg.history = [name];
@@ -167,7 +174,7 @@ class DigimonState {
     if (!this.ready) { return { initialized: false }; }
     const selectedId = this.d.selected;
     const collection = this.d.collection.map(digi => {
-      if (digi.unhatched) { return { id: digi.id, unhatched: true }; }
+      if (digi.unhatched) { return { id: digi.id, unhatched: true, divine: !!digi.divine }; }
       const mon = DIGIMON[digi.currentName];
       const evo = EVOLUTIONS[digi.currentName];
       if (!mon) {
@@ -185,7 +192,7 @@ class DigimonState {
         lifeXP:      digi.lifeXP || 0,
         skipped,
         id:          digi.id,
-        size:        JOGRESS[digi.currentName] ? 80 : (STAGE_SIZES[mon.stage] || 48),
+        size:        (JOGRESS[digi.currentName] || DIVINE.includes(digi.currentName)) ? 80 : (STAGE_SIZES[mon.stage] || 48),
         name:        digi.currentName,
         stage:       mon.stage,
         sprite:      mon.sprite,

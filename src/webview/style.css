@@ -59,6 +59,8 @@ body { background:var(--vscode-sideBar-background); color:var(--vscode-foregroun
 .icon-btn.danger:hover { border-color:#f38ba8; color:#f38ba8; }
 
 .egg-progress { margin-bottom:10px; }
+.egg-row.divine { border-color:#f9e2af; box-shadow:0 0 8px rgba(249,226,175,0.45); }
+.egg-row.divine .roster-name { color:#f9e2af; }
 .footer { display:flex; justify-content:space-between; align-items:center; }
 .total  { font-size:9px; opacity:.4; }
 .rst-btn { background:none; border:1px solid var(--vscode-panel-border,#444); color:var(--vscode-foreground); border-radius:4px; padding:2px 7px; font-size:9px; cursor:pointer; opacity:.45; }

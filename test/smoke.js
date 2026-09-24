@@ -15,7 +15,7 @@ const vscode = {
     registerWebviewViewProvider: (id, p) => { assert.strictEqual(id, 'codeTamer.mainView'); provider = p; return { dispose() {} }; },
     onDidEndTerminalShellExecution: on('term'),
   },
-  workspace: { onDidSaveTextDocument: on('save'), onDidChangeTextDocument: on('change') },
+  workspace: { onDidSaveTextDocument: on('save'), onDidChangeTextDocument: on('change'), workspaceFolders: [], getConfiguration: () => ({ get: (k, d) => d }) },
   languages: { getDiagnostics: () => diagnostics },
   commands: { registerCommand: (id, fn) => { commands[id] = fn; return { dispose() {} }; } },
   extensions: { getExtension: () => ({ isActive: true, exports: { getAPI: () => ({
@@ -99,6 +99,43 @@ const file = { uri: { scheme: 'file' } };
   const { JOGRESS } = require('../src/data/evolutions');
   Object.entries(JOGRESS).flatMap(([r, p]) => [r, ...p]).forEach(n =>
     assert(DIGIMON[n] && require('fs').existsSync(__dirname + '/../sprites/' + DIGIMON[n].sprite), 'fusion data: ' + n));
+
+  // Claude Code transcripts: prompts and edits give XP, history and half lines don't
+  const { lineXP, watchClaude } = require('../src/claude');
+  const txt = t => ({ type: 'user', message: { content: t } });
+  assert.deepStrictEqual([
+    lineXP(txt('hi')), lineXP({ type: 'user', message: { content: [{ type: 'tool_result' }] } }),
+    lineXP({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Edit' }, { type: 'tool_use', name: 'Bash' }, { type: 'tool_use', name: 'Write' }] } }),
+    lineXP({ ...txt('sub'), isSidechain: true }), lineXP({ ...txt('meta'), isMeta: true }),
+    lineXP({ type: 'attachment', attachment: { type: 'queued_command', commandMode: 'prompt', origin: { kind: 'human' } } }),
+    lineXP({ type: 'attachment', attachment: { type: 'queued_command', commandMode: 'prompt', isMeta: true, origin: { kind: 'peer' } } }),
+  ], [2, 0, 2, 0, 0, 2, 0], 'lineXP');
+  const root = fs.mkdtempSync(require('os').tmpdir() + '/ct-'), proj = root + '/-work-app';
+  fs.mkdirSync(proj);
+  const line = o => JSON.stringify(o) + '\n';
+  fs.writeFileSync(proj + '/old.jsonl', line(txt('before activation')));
+  let got = 0, on = true;
+  const w = watchClaude(['/work/app'], n => { got += n; }, { root, enabled: () => on });
+  w.scan(); assert.strictEqual(got, 0, 'history ignored');
+  fs.appendFileSync(proj + '/old.jsonl', line(txt('a')) + JSON.stringify(txt('b')).slice(0, 10));
+  fs.writeFileSync(proj + '/new.jsonl', line(txt('c')));
+  w.scan(); assert.strictEqual(got, 4, 'new lines count, half line waits');
+  fs.appendFileSync(proj + '/old.jsonl', JSON.stringify(txt('b')).slice(10) + '\n');
+  w.scan(); assert.strictEqual(got, 6, 'half line counted once complete');
+  on = false; fs.appendFileSync(proj + '/new.jsonl', line(txt('d'))); w.scan();
+  on = true; w.scan(); assert.strictEqual(got, 6, 'disabled: no XP, no backlog');
+  w.dispose();
+
+  // Divine Egg from Claude XP hatches a Holy Beast
+  const { DIVINE } = require('../src/data/evolutions');
+  store[KEY] = { collection: [mk(1, 'Agumon', 0)], totalXP: 0, eggsEarned: 0, eggXP: 0, selected: null };
+  assert.strictEqual(provider.state.addXP(299, true), null, 'no divine egg yet');
+  assert.strictEqual(provider.state.addXP(1, true), 'divine', 'divine egg at threshold');
+  assert.notStrictEqual(provider.state.addXP(300), 'divine', 'normal XP does not fill divine meter');
+  assert.strictEqual(store[KEY].collection.filter(d => d.divine).length, 1, 'one divine egg');
+  const egg = store[KEY].collection.find(d => d.divine);
+  assert(provider.state.snapshot().collection.find(d => d.id === egg.id).divine, 'snapshot marks divine');
+  assert(DIVINE.includes(provider.state.hatchEgg(egg.id)), 'hatches a Holy Beast');
 
   // reset all: button and command
   await send({ command: 'reset' });

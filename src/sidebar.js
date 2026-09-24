@@ -93,7 +93,7 @@ class DigimonSidebarProvider {
   refresh(newEgg) {
     if (!this._view) { return; }
     if (newEgg) {
-      vscode.window.showInformationMessage('🥚 A new egg appeared in your roster!');
+      vscode.window.showInformationMessage(newEgg === 'divine' ? '✨ A Divine Egg appeared, blessed by Claude!' : '🥚 A new egg appeared in your roster!');
       this._buildHtml(); // egg added to roster, need to rebuild
     } else {
       this._pushUpdate(); // XP changed — just update numbers, leave arena alone

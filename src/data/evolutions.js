@@ -256,6 +256,10 @@ const EVOLUTIONS = {
   'Omnimon Zwart':           { xpToEvolve: null, evolvesTo: [] },
   'Imperialdramon Paladin':  { xpToEvolve: null, evolvesTo: [] },
   'Chaosmon':                { xpToEvolve: null, evolvesTo: [] },
+  'Azulongmon':              { xpToEvolve: null, evolvesTo: [] },
+  'Baihumon':                { xpToEvolve: null, evolvesTo: [] },
+  'Ebonwumon':               { xpToEvolve: null, evolvesTo: [] },
+  'Zhuqiaomon':              { xpToEvolve: null, evolvesTo: [] },
 };
 
 // DNA Digivolution: two Megas fuse into one (both are consumed)
@@ -271,4 +275,7 @@ const { DIGIMON } = require('./digimon');
 // Automatically includes any Digimon with stage 'Fresh' — no need to update manually
 const FRESH_EGGS = Object.keys(DIGIMON).filter(name => DIGIMON[name].stage === 'Fresh');
 
-module.exports = { EVOLUTIONS, FRESH_EGGS, JOGRESS };
+// Divine Eggs (earned with Claude Code XP) hatch straight into one of the Four Holy Beasts
+const DIVINE = ['Azulongmon', 'Baihumon', 'Ebonwumon', 'Zhuqiaomon'];
+
+module.exports = { EVOLUTIONS, FRESH_EGGS, JOGRESS, DIVINE };

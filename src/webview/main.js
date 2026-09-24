@@ -108,9 +108,10 @@ function buildSelPanel(sel) {
 function buildRoster(collection) {
   return collection.map(d => {
     if (d.unhatched) {
-      return '<div class="roster-row egg-row" data-id="' + d.id + '">' +
+      return '<div class="roster-row egg-row' + (d.divine ? ' divine' : '') + '" data-id="' + d.id + '">' +
         '<span style="font-size:24px;flex-shrink:0">🥚</span>' +
-        '<div class="roster-info"><div class="roster-name">Mystery Egg</div><div class="roster-stage">Waiting to hatch...</div></div>' +
+        '<div class="roster-info"><div class="roster-name">' + (d.divine ? '✨ Divine Egg' : 'Mystery Egg') + '</div>' +
+          '<div class="roster-stage">' + (d.divine ? 'Blessed by Claude' : 'Waiting to hatch...') + '</div></div>' +
         '<div class="roster-actions"><button class="icon-btn" data-cmd="hatchEgg" data-id="' + d.id + '" style="width:auto;padding:0 6px;opacity:1;background:#f9e2af;color:#11111b;border-color:#f9e2af;font-weight:700">Hatch</button></div>' +
       '</div>';
     }
